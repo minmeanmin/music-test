@@ -9,6 +9,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            background-color: white; /* 배경 색상 제거 */
         }
 
         img {
@@ -50,46 +51,11 @@
             margin: 0 10px;
         }
 
-        #prev-btn {
-            background-color: #939393;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-        }
-
-        #play-btn {
-            background-color: #939393;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin-bottom: 10px;
-            cursor: pointer;
-        }
-
-        #next-btn {
-            background-color: #939393;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-        }
-
-        #shuffle-btn {
+        #prev-btn,
+        #play-btn,
+        #next-btn,
+        #shuffle-btn,
+        #mode-btn {
             background-color: #939393;
             color: white;
             border: none;
@@ -105,21 +71,6 @@
         #shuffle-btn.active {
             background-color: #5d5d5d;
         }
-
-        #mode-btn {
-            background-color: #939393;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-        }
-
-
     </style>
 </head>
 <body>
@@ -137,15 +88,14 @@
         </ul>
     </div>
     <div id="controls">
+        <button id="shuffle-btn">셔플</button>
         <button id="prev-btn">이전곡</button>
         <button id="next-btn">다음곡</button>
-        <button id="shuffle-btn">셔플</button>
-        <button id="mode-btn">반복 모드 설정</button>
+        <button id="mode-btn">모드: normal</button>
     </div>
 </div>
 
 <script>
-
     const audioPlayer = document.getElementById('audio-player');
     const songList = document.getElementById('song-list');
     const prevBtn = document.getElementById('prev-btn');
@@ -160,6 +110,7 @@
     let previousIndex = null;
     let songs = [];
     let playMode = 'normal'; // 초기 모드는 normal
+
     // 노래 목록 초기화
         {{#songs}}
         songs.push({
@@ -185,7 +136,6 @@
     function playSong(index) {
         audioPlayer.src = songs[index].songSrc;
         coverImage.src = songs[index].coverSrc;
-
         audioPlayer.play();
 
         // 이전에 재생 중이었던 노래의 active 속성 제거
@@ -197,15 +147,8 @@
         }
 
         previousIndex = index;
-
-        // 전체 곡 반복 모드
-        if (playMode === 'repeat-all' && index === songs.length - 1) {
-            currentIndex = 0; // 첫 번째 곡으로 이동
-        } else {
-            currentIndex = index;
-        }
+        currentIndex = index;
     }
-
 
     // 이전 노래 재생
     prevBtn.addEventListener('click', () => {
@@ -227,15 +170,31 @@
         }
     });
 
+    // 오디오 플레이어가 끝났을 때 이벤트 처리
+    audioPlayer.addEventListener('ended', () => {
+        if (playMode === 'repeat-one') {
+            audioPlayer.play();
+        } else if (playMode === 'repeat-all') {
+            currentIndex = (currentIndex + 1) % songs.length;
+            if (currentIndex === 0) {
+                playSong(0);
+            } else {
+                playSong(currentIndex);
+            }
+        } else {
+            currentIndex = (currentIndex + 1) % songs.length;
+            if (currentIndex === 0) {
+                audioPlayer.pause();
+            } else {
+                playSong(currentIndex);
+            }
+        }
+    });
+
     // 셔플 버튼 클릭 이벤트 리스너
     shuffleBtn.addEventListener('click', () => {
-        // songs 배열 셔플
         shuffleArray(songs);
-
-        // 플레이리스트 다시 렌더링
         renderPlaylist();
-
-        // 첫 번째 노래 재생
         playSong(0);
     });
 
@@ -259,16 +218,15 @@
         return array;
     }
 
-    // 모드 변경 함수
+    // 모드 변경 버튼 클릭 이벤트 리스너
     modeBtn.addEventListener('click', () => {
-        // 다음 모드로 변경
         const currentModeIndex = PLAY_MODES.indexOf(playMode);
         playMode = PLAY_MODES[(currentModeIndex + 1) % PLAY_MODES.length];
         updatePlayMode();
     });
 
+    // 모드 업데이트 함수
     function updatePlayMode() {
-        // 모드에 따른 동작 변경
         switch (playMode) {
             case 'normal':
                 audioPlayer.loop = false;
@@ -277,12 +235,20 @@
                 audioPlayer.loop = true;
                 break;
             case 'repeat-all':
-                audioPlayer.loop = true;
+                audioPlayer.loop = false;
                 break;
         }
-        // 모드 표시 업데이트
         modeBtn.textContent = `모드: ${playMode}`;
     }
+
+    // 재생/일시정지 상태에 따라 버튼 텍스트 변경
+    audioPlayer.addEventListener('play', () => {
+        playBtn.textContent = '일시정지';
+    });
+
+    audioPlayer.addEventListener('pause', () => {
+        playBtn.textContent = '재생';
+    });
 
 </script>
 
