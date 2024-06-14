@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        img {
+            width: 500px;
+            height: 500px;
+        }
+
+        #music-player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #playlist {
+            margin-top: 20px;
+        }
+
+        #song-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #song-list li {
+            cursor: pointer;
+            padding: 5px 0;
+        }
+
+        #song-list li.active {
+            font-weight: bold;
+        }
+
+        #controls {
+            margin-top: 20px;
+        }
+
+        #controls button {
+            margin: 0 10px;
+        }
+
+        #prev-btn {
+            background-color: #939393;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+        #play-btn {
+            background-color: #939393;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        #next-btn {
+            background-color: #939393;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+        #shuffle-btn {
+            background-color: #939393;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+        #shuffle-btn.active {
+            background-color: #5d5d5d;
+        }
+
+        #mode-btn {
+            background-color: #939393;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+
+    </style>
+</head>
+<body>
+<div id="music-player">
+    <img id="cover-image" src="/cover/main-cover.jpg">
+    <button id="play-btn">플레이 리스트 재생</button>
+    <br>
+    <audio id="audio-player" controls></audio>
+    <div id="playlist">
+        <h3>Playlist</h3>
+        <ul id="song-list">
+            {{#songs}}
+                <li data-src="{{songSrc}}">{{title}}</li>
+            {{/songs}}
+        </ul>
+    </div>
+    <div id="controls">
+        <button id="prev-btn">이전곡</button>
+        <button id="next-btn">다음곡</button>
+        <button id="shuffle-btn">셔플</button>
+        <button id="mode-btn">반복 모드 설정</button>
+    </div>
+</div>
+
+<script>
+
+    const audioPlayer = document.getElementById('audio-player');
+    const songList = document.getElementById('song-list');
+    const prevBtn = document.getElementById('prev-btn');
+    const playBtn = document.getElementById('play-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const modeBtn = document.getElementById('mode-btn');
+    const shuffleBtn = document.getElementById('shuffle-btn');
+    const coverImage = document.getElementById('cover-image');
+    const PLAY_MODES = ['normal', 'repeat-one', 'repeat-all'];
+
+    let currentIndex = 0;
+    let previousIndex = null;
+    let songs = [];
+    let playMode = 'normal'; // 초기 모드는 normal
+    // 노래 목록 초기화
+        {{#songs}}
+        songs.push({
+            title: '{{title}}',
+            songSrc: '{{songSrc}}',
+            coverSrc: '{{coverSrc}}'
+        });
+        {{/songs}}
+
+    // 플레이 리스트 재생/일시정지 버튼 처리
+    playBtn.addEventListener('click', () => {
+        if (audioPlayer.src === '') {
+            // 버튼 클릭 시 첫 번째 노래 재생
+            playSong(0);
+        } else if (audioPlayer.paused) {
+            audioPlayer.play();
+        } else {
+            audioPlayer.pause();
+        }
+    });
+
+    // 노래 재생 함수
+    function playSong(index) {
+        audioPlayer.src = songs[index].songSrc;
+        coverImage.src = songs[index].coverSrc;
+
+        audioPlayer.play();
+
+        // 이전에 재생 중이었던 노래의 active 속성 제거
+        if (previousIndex !== null && previousIndex !== index) {
+            songList.children[previousIndex].classList.remove('active');
+            songList.children[index].classList.add('active');
+        } else {
+            songList.children[index].classList.add('active');
+        }
+
+        previousIndex = index;
+
+        // 전체 곡 반복 모드
+        if (playMode === 'repeat-all' && index === songs.length - 1) {
+            currentIndex = 0; // 첫 번째 곡으로 이동
+        } else {
+            currentIndex = index;
+        }
+    }
+
+
+    // 이전 노래 재생
+    prevBtn.addEventListener('click', () => {
+        currentIndex = (currentIndex - 1 + songs.length) % songs.length;
+        playSong(currentIndex);
+    });
+
+    // 다음 노래 재생
+    nextBtn.addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % songs.length;
+        playSong(currentIndex);
+    });
+
+    // 노래 목록 클릭 시 재생
+    songList.addEventListener('click', (event) => {
+        if (event.target.tagName.toLowerCase() === 'li') {
+            const index = Array.from(songList.children).indexOf(event.target);
+            playSong(index);
+        }
+    });
+
+    // 셔플 버튼 클릭 이벤트 리스너
+    shuffleBtn.addEventListener('click', () => {
+        // songs 배열 셔플
+        shuffleArray(songs);
+
+        // 플레이리스트 다시 렌더링
+        renderPlaylist();
+
+        // 첫 번째 노래 재생
+        playSong(0);
+    });
+
+    // 플레이리스트 렌더링 함수
+    function renderPlaylist() {
+        songList.innerHTML = '';
+        songs.forEach((song, index) => {
+            const li = document.createElement('li');
+            li.textContent = song.title;
+            li.dataset.src = song.songSrc;
+            songList.appendChild(li);
+        });
+    }
+
+    // 배열 셔플 함수
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // 모드 변경 함수
+    modeBtn.addEventListener('click', () => {
+        // 다음 모드로 변경
+        const currentModeIndex = PLAY_MODES.indexOf(playMode);
+        playMode = PLAY_MODES[(currentModeIndex + 1) % PLAY_MODES.length];
+        updatePlayMode();
+    });
+
+    function updatePlayMode() {
+        // 모드에 따른 동작 변경
+        switch (playMode) {
+            case 'normal':
+                audioPlayer.loop = false;
+                break;
+            case 'repeat-one':
+                audioPlayer.loop = true;
+                break;
+            case 'repeat-all':
+                audioPlayer.loop = true;
+                break;
+        }
+        // 모드 표시 업데이트
+        modeBtn.textContent = `모드: ${playMode}`;
+    }
+
+</script>
+
+</body>
+</html>
